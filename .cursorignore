@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Testing
+coverage/
+test-results/
+
+# Lock files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Environment (secrets)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/

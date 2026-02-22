@@ -1,0 +1,7 @@
+# 3_backend_app Cursor Rules
+
+1. Read CURSOR.md in this directory first.
+2. API contracts must match API_CONTRACTS.md (frontend expects exact paths and shapes).
+3. Use NestJS modules: flight, hotel, booking, user, wallet, promo, chat, health.
+4. Path prefix /api for all routes.
+5. See REQUIREMENTS_AND_GAP_ANALYSIS.md for phased implementation plan.
