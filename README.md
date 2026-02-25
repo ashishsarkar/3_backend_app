@@ -1,7 +1,25 @@
 # 3-backend-app — Booking Backend
 
+<!-- CI Status -->
 [![Unit tests](https://github.com/ashishsarkar/3-backend-app/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/ashishsarkar/3-backend-app/actions/workflows/unit-tests.yml)
 [![Integration tests](https://github.com/ashishsarkar/3-backend-app/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/ashishsarkar/3-backend-app/actions/workflows/integration-tests.yml)
+
+<!-- Code Quality & Coverage -->
+[![codecov](https://codecov.io/gh/ashishsarkar/3-backend-app/branch/main/graph/badge.svg)](https://codecov.io/gh/ashishsarkar/3-backend-app)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+<!-- Version & License -->
+[![GitHub release](https://img.shields.io/github/v/release/ashishsarkar/3-backend-app?include_prereleases)](https://github.com/ashishsarkar/3-backend-app/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+<!-- Stack -->
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/)
+
+<!-- Community -->
+[![GitHub issues](https://img.shields.io/github/issues/ashishsarkar/3-backend-app)](https://github.com/ashishsarkar/3-backend-app/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/ashishsarkar/3-backend-app/pulls)
 
 FastAPI REST API for the flight & hotel booking platform. Uses PostgreSQL, MongoDB, Redis, Kafka, and RabbitMQ.
 
