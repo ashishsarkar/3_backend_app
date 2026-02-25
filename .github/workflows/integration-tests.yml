@@ -1,31 +1,35 @@
+# Backend integration tests — runs when app code or this workflow changes.
+# Repo root = backend app (app/, tests/, requirements.txt). No working-directory needed.
+
 name: Backend Integration Tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, feature/webapp-backend]
     paths:
-      - "3-backend-app/**"
-      - "3-backend-app/.github/workflows/integration-tests.yml"
+      - "app/**"
+      - "tests/**"
+      - "requirements*.txt"
+      - ".github/workflows/integration-tests.yml"
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, feature/webapp-backend]
     paths:
-      - "3-backend-app/**"
-      - "3-backend-app/.github/workflows/integration-tests.yml"
+      - "app/**"
+      - "tests/**"
+      - "requirements*.txt"
+      - ".github/workflows/integration-tests.yml"
 
 jobs:
   integration-tests:
     name: Integration tests
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: 3-backend-app
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
-          cache-dependency-path: 3-backend-app/requirements.txt
+          cache-dependency-path: requirements.txt
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip

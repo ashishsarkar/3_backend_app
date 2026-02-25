@@ -31,6 +31,20 @@ Adds: `pytest`, `pytest-asyncio`, `httpx`, `pytest-cov`.
 
 ---
 
+## CI / GitHub Actions
+
+Workflows live under **`.github/workflows/`** (repo root when this app is the whole repo):
+
+- **`unit-tests.yml`** — runs on push/PR to `main`, `develop`, `feature/webapp-backend` when `app/`, `tests/`, or `requirements*.txt` change.
+- **`integration-tests.yml`** — same triggers; runs integration tests.
+
+- **`paths:`** — workflow runs only when changed files match these globs (e.g. `app/**`, `tests/**`). Avoids running backend CI when only docs or other apps change.
+- **`working-directory:`** — not used here; steps run from the repo root (this backend app).
+
+If this app lives inside a **monorepo** (e.g. root has `2-web-app`, `3-backend-app`), use a workflow at the **repository root** `.github/workflows/` that runs these tests with `working-directory: 3-backend-app` and `paths: 3-backend-app/**`.
+
+---
+
 ## How to run the app
 
 ### 1. Local development (all services on host)
