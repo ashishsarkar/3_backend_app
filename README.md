@@ -172,4 +172,5 @@ See `.env.example`. Main ones:
 └── .env.example
 ```
 
-For full context (API contracts, routers, DBs, messaging), see **CURSOR.md**.
+- **CURSOR.md** — Full context (API, routers, DBs, messaging).
+- **DATABASE_DESIGN.md** — Relational database design, ER diagram, and modeling notes.

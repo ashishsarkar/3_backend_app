@@ -149,6 +149,7 @@ Full details: `API_CONTRACTS.md` | Scope & gaps: `REQUIREMENTS_AND_GAP_ANALYSIS.
 ├── pytest.ini
 ├── Dockerfile
 ├── .env.example
+├── DATABASE_DESIGN.md       # Relational schema, ER, design decisions
 ├── API_CONTRACTS.md
 ├── ARCHITECT_PROMPT.md
 ├── REQUIREMENTS_AND_GAP_ANALYSIS.md
@@ -274,5 +275,6 @@ aio-pika>=9.4.0
 - **`project-automation-docker-file/docker-compose.yml`** — Full stack (Postgres, MongoDB, backend, frontend)
 - **`.github/workflows/ci.yml`** — GitHub Actions CI (frontend: Node; backend job may need Python)
 - **`API_CONTRACTS.md`** — Detailed request/response shapes
+- **`DATABASE_DESIGN.md`** — Relational database design, ER, tables, and modeling notes
 - **`ARCHITECT_PROMPT.md`** — Backend design / PRD reference
 - **`REQUIREMENTS_AND_GAP_ANALYSIS.md`** — Scope and gaps
