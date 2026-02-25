@@ -1,5 +1,8 @@
 # 3-backend-app — Booking Backend
 
+[![Unit tests](https://github.com/ashishsarkar/3-backend-app/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/ashishsarkar/3-backend-app/actions/workflows/unit-tests.yml)
+[![Integration tests](https://github.com/ashishsarkar/3-backend-app/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/ashishsarkar/3-backend-app/actions/workflows/integration-tests.yml)
+
 FastAPI REST API for the flight & hotel booking platform. Uses PostgreSQL, MongoDB, Redis, Kafka, and RabbitMQ.
 
 ## Dependencies
@@ -33,9 +36,11 @@ Adds: `pytest`, `pytest-asyncio`, `httpx`, `pytest-cov`.
 
 ## CI / GitHub Actions
 
+The badges at the top show the latest run status for each workflow ([repo](https://github.com/ashishsarkar/3-backend-app)).
+
 Workflows live under **`.github/workflows/`** (repo root when this app is the whole repo):
 
-- **`unit-tests.yml`** — runs on push/PR to `main`, `develop`, `feature/webapp-backend` when `app/`, `tests/`, or `requirements*.txt` change.
+- **`unit-tests.yml`** — runs on push/PR to `main`, `develop`, `feature/webapp-backend` when `tests/` changes.
 - **`integration-tests.yml`** — same triggers; runs integration tests.
 
 - **`paths:`** — workflow runs only when changed files match these globs (e.g. `app/**`, `tests/**`). Avoids running backend CI when only docs or other apps change.
