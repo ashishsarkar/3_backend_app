@@ -7,17 +7,12 @@ on:
   push:
     branches: [main, develop, feature/webapp-backend]
     paths:
-      - "app/**"
       - "tests/**"
-      - "requirements*.txt"
-      - ".github/workflows/integration-tests.yml"
+
   pull_request:
     branches: [main, develop, feature/webapp-backend]
     paths:
-      - "app/**"
       - "tests/**"
-      - "requirements*.txt"
-      - ".github/workflows/integration-tests.yml"
 
 jobs:
   integration-tests:

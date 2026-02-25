@@ -17,3 +17,5 @@ def test_get_booking_404(client):
     r = client.get("/api/booking/nonexistent-id-123")
     assert r.status_code == 404
     assert "not found" in r.json()["detail"].lower()
+
+    
