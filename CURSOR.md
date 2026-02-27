@@ -37,17 +37,18 @@
 
 | Router | Prefix | Backing | Purpose |
 |--------|--------|---------|---------|
-| flights | `/api/flights` | PostgreSQL + Redis cache | Search, detail |
-| hotels | `/api/hotels` | PostgreSQL + Redis cache | Search, detail, rooms |
+| flights | `/api/flights` | PostgreSQL + Redis cache | Search (partial + city name match), detail |
+| hotels | `/api/hotels` | PostgreSQL + Redis cache | Search (partial location match), detail, rooms |
 | booking | `/api/booking` | PostgreSQL + Kafka + RabbitMQ | Create, get, cancel |
 | user | `/api/user` | PostgreSQL | Profile, bookings |
 | wallet | `/api/wallet` | PostgreSQL | Balance, top-up, use credits |
-| promo | `/api/promo` | PostgreSQL | Validate promo code |
+| promo | `/api/promo` | PostgreSQL | Validate promo code (percent/fixed, case-insensitive) |
 | chat | `/api/chat` | MongoDB | Chatbot replies + history (GET/DELETE) |
 | alerts | `/api/alerts` | MongoDB | Price alerts CRUD |
 | activity | `/api/activity` | MongoDB | Event logging, retrieval |
 | preferences | `/api/preferences` | MongoDB | User preferences |
 | confirmations | `/api/confirmations` | Redis | GET /log — recent confirmations (from RabbitMQ consumer) |
+| locations | `/api/locations` | Elasticsearch | Autocomplete — cities, airports, states, countries |
 | health | `/health` | — | Liveness + readiness (PostgreSQL + MongoDB) |
 
 ---
@@ -113,24 +114,25 @@ Full details: `API_CONTRACTS.md` | Scope & gaps: `REQUIREMENTS_AND_GAP_ANALYSIS.
 3-backend-app/
 ├── app/
 │   ├── main.py              # FastAPI app — lifespan, CORS, all routers
-│   ├── config.py            # Env: DATABASE_URL, MONGODB_*, REDIS_*, KAFKA_*, RABBITMQ_*
-│   ├── database.py         # SQLAlchemy engine, SessionLocal, get_db, check_db_connection
+│   ├── config.py            # Env: DATABASE_URL, MONGODB_*, REDIS_*, KAFKA_*, RABBITMQ_*, ELASTICSEARCH_*
+│   ├── database.py          # SQLAlchemy engine, SessionLocal, get_db, check_db_connection
 │   ├── mongodb.py           # Motor client, ping_mongo, close_mongo
 │   ├── redis_client.py      # cache_get/cache_set, confirmations_log_append/recent, close_redis
 │   ├── kafka_client.py      # get_kafka_producer, publish_booking_event, close_kafka
-│   ├── rabbitmq_client.py  # publish_confirmation_task, start_rabbitmq_consumer, close_rabbitmq
+│   ├── rabbitmq_client.py   # publish_confirmation_task, start_rabbitmq_consumer, close_rabbitmq
+│   ├── elasticsearch_client.py  # ES client, index+mapping setup, seed 133 locations, search_locations
 │   ├── models.py            # SQLAlchemy ORM models
 │   ├── schemas/
 │   │   ├── __init__.py
 │   │   └── mongo.py         # Pydantic schemas for MongoDB collections
 │   ├── db/
 │   │   ├── __init__.py
-│   │   └── seed.py          # Seed PostgreSQL (flights, hotels, wallet, promos)
+│   │   └── seed.py          # Seed PostgreSQL (54 flights, hotels, wallet, promos); auto-resyncs on count change
 │   └── routers/
 │       ├── __init__.py
-│       ├── flights.py       # Uses Redis cache
-│       ├── hotels.py       # Uses Redis cache
-│       ├── booking.py      # Publishes to Kafka + RabbitMQ on create
+│       ├── flights.py       # Partial match: ilike(code) OR ilike(%city%)
+│       ├── hotels.py        # Partial match on location/name
+│       ├── booking.py       # Publishes to Kafka + RabbitMQ on create
 │       ├── user.py
 │       ├── wallet.py
 │       ├── promo.py
@@ -139,17 +141,21 @@ Full details: `API_CONTRACTS.md` | Scope & gaps: `REQUIREMENTS_AND_GAP_ANALYSIS.
 │       ├── activity.py
 │       ├── preferences.py
 │       ├── confirmations.py # GET /log from Redis
+│       ├── locations.py     # GET /search — Elasticsearch autocomplete
 │       └── health.py        # /health/live, /health/ready
 ├── tests/
-│   ├── conftest.py          # Pytest: client fixture, SQLite in-memory, mocks for Redis/Kafka/RabbitMQ
-│   ├── unit/                # Unit tests (health, confirmations, redis_client, booking)
-│   └── integration/        # Integration tests (flights, booking, confirmations API)
+│   ├── conftest.py          # client fixture, SQLite in-memory, mocks for Redis/Kafka/RabbitMQ/ES
+│   ├── unit/                # test_health, test_confirmations, test_redis_client, test_booking_router,
+│   │                        # test_promo, test_wallet, test_seed
+│   └── integration/         # test_api_flights, test_api_flights_extended, test_api_booking,
+│                            # test_api_confirmations, test_api_hotels, test_api_promo,
+│                            # test_api_wallet, test_api_locations
 ├── requirements.txt
 ├── requirements-dev.txt     # pytest, pytest-asyncio, httpx, pytest-cov
 ├── pytest.ini
 ├── Dockerfile
 ├── .env.example
-├── DATABASE_DESIGN.md       # Relational schema, ER, design decisions
+├── DATABASE_DESIGN.md
 ├── API_CONTRACTS.md
 ├── ARCHITECT_PROMPT.md
 ├── REQUIREMENTS_AND_GAP_ANALYSIS.md
@@ -232,8 +238,33 @@ On shutdown: `close_rabbitmq()`, `close_kafka()`, `close_redis()`, `close_mongo(
 ## Testing
 
 - **Framework:** pytest
-- **Unit tests:** `tests/unit/` — health, confirmations (mocked Redis), redis_client, booking router helpers
-- **Integration tests:** `tests/integration/` — full API with TestClient; in-memory SQLite (no Postgres required), Redis/Kafka/RabbitMQ mocked in `conftest.py`
+- **Config:** `pytest.ini` — `asyncio_mode = auto`, `testpaths = tests`
+- **No external services needed:** SQLite in-memory DB; Redis/Kafka/RabbitMQ/Elasticsearch mocked in `conftest.py`
+
+### Unit tests (`tests/unit/`)
+
+| File | What it covers |
+|------|----------------|
+| `test_health.py` | `/health/live`, `/health/ready` — liveness + readiness probes |
+| `test_confirmations.py` | Confirmations log via mocked Redis |
+| `test_redis_client.py` | `cache_get`, `cache_set`, TTL, confirmations helpers |
+| `test_booking_router.py` | `_generate_id` format, GET 404 |
+| `test_promo.py` | `Promo.calc_savings` logic (percent/fixed/capped), promo router endpoints |
+| `test_wallet.py` | GET balance, top-up, use credits, insufficient balance |
+| `test_seed.py` | Seed data integrity — counts, required fields, unique IDs, 2026 dates |
+
+### Integration tests (`tests/integration/`)
+
+| File | What it covers |
+|------|----------------|
+| `test_api_flights.py` | Search (origin/dest filters), GET by ID, 404, root endpoint |
+| `test_api_flights_extended.py` | City-name search, COK→CCU route, CCU departures, field shapes |
+| `test_api_booking.py` | Create, GET, PATCH/cancel (full CRUD cycle) |
+| `test_api_confirmations.py` | GET /log from Redis (mocked) |
+| `test_api_hotels.py` | Search (location filter, partial match), GET by ID, rooms shape, 404 |
+| `test_api_promo.py` | Valid/invalid codes, percent/fixed discount, case-insensitivity, cap logic |
+| `test_api_wallet.py` | GET balance, top-up, use, insufficient balance, multi-operation chain |
+| `test_api_locations.py` | ES-mocked search, response shape, required params, size validation |
 
 **Run all tests:**
 ```bash

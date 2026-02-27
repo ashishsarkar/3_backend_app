@@ -11,8 +11,9 @@ from app.mongodb import close_mongo
 from app.redis_client import close_redis
 from app.kafka_client import close_kafka
 from app.rabbitmq_client import start_rabbitmq_consumer, close_rabbitmq
+from app.elasticsearch_client import ensure_index_and_seed, close_es
 from app.routers import booking, chat, flights, health, hotels, promo, user, wallet
-from app.routers import alerts, activity, preferences, confirmations
+from app.routers import alerts, activity, preferences, confirmations, locations
 
 
 @asynccontextmanager
@@ -25,12 +26,14 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
     await start_rabbitmq_consumer()
+    await ensure_index_and_seed()
     yield
     # ── Shutdown ──────────────────────────────────────────────────────────────
     await close_rabbitmq()
     await close_kafka()
     close_redis()
     await close_mongo()
+    await close_es()
 
 
 app = FastAPI(title="3_backend_app", version="1.0.0", lifespan=lifespan)
@@ -57,6 +60,7 @@ app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"])
 app.include_router(activity.router, prefix="/api/activity", tags=["activity"])
 app.include_router(preferences.router, prefix="/api/preferences", tags=["preferences"])
 app.include_router(confirmations.router, prefix="/api/confirmations", tags=["confirmations"])
+app.include_router(locations.router, prefix="/api/locations", tags=["locations"])
 
 app.include_router(health.router, prefix="/health", tags=["health"])
 
@@ -70,6 +74,7 @@ def root():
             "postgresql": "flights, hotels, rooms, bookings, wallet, promos",
             "mongodb": "chat_messages, price_alerts, activity_logs, user_preferences",
             "redis": "search cache (flights/hotels), confirmations log",
+            "elasticsearch": "locations index (cities, airports, states, countries)",
         },
         "messaging": {
             "kafka": "booking.events (BookingCreated)",

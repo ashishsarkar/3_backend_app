@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Flight
@@ -15,11 +16,27 @@ def search(origin: str | None = None, destination: str | None = None, db: Sessio
     cached = cache_get(cache_key)
     if cached is not None:
         return cached
+
     query = db.query(Flight)
+
     if origin:
-        query = query.filter(Flight.origin.ilike(origin))
+        term = f"%{origin.strip()}%"
+        # Match by IATA code (exact, case-insensitive) OR city name (partial)
+        query = query.filter(
+            or_(
+                Flight.origin.ilike(origin.strip()),
+                Flight.origin_city.ilike(term),
+            )
+        )
     if destination:
-        query = query.filter(Flight.destination.ilike(destination))
+        term = f"%{destination.strip()}%"
+        query = query.filter(
+            or_(
+                Flight.destination.ilike(destination.strip()),
+                Flight.destination_city.ilike(term),
+            )
+        )
+
     result = {"flights": [f.to_dict() for f in query.all()]}
     cache_set(cache_key, result)
     return result

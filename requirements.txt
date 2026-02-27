@@ -8,3 +8,4 @@ pymongo>=4.6.0
 redis>=5.0.0
 aiokafka>=0.10.0
 aio-pika>=9.4.0
+elasticsearch[async]>=8.0.0,<9.0.0

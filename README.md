@@ -160,13 +160,38 @@ pytest tests/integration/test_api_booking.py
 
 ## Test layout
 
-| Directory           | Purpose |
-|--------------------|--------|
-| `tests/unit/`      | Unit tests (mocked Redis, health, confirmations, booking helpers, redis_client) |
-| `tests/integration/` | Integration tests (full API with TestClient; in-memory SQLite, mocked messaging) |
-| `tests/conftest.py` | Pytest fixtures: `client` (TestClient), env and mocks for no external services |
+| Directory | Purpose |
+|-----------|---------|
+| `tests/conftest.py` | `client` fixture (TestClient), SQLite in-memory DB, all external services mocked |
+| `tests/unit/` | Unit tests — no DB or network required |
+| `tests/integration/` | Integration tests — full API via TestClient with seeded SQLite |
 
-Unit tests mock external I/O (Redis, Kafka, RabbitMQ, MongoDB ping). Integration tests hit the real FastAPI app with a seeded in-memory SQLite database and mocked messaging so no Postgres/Redis/Kafka/RabbitMQ are required for `pytest`.
+### Unit tests
+
+| File | Covers |
+|------|--------|
+| `test_health.py` | `/health/live`, `/health/ready` |
+| `test_confirmations.py` | Confirmations log (mocked Redis) |
+| `test_redis_client.py` | `cache_get`, `cache_set`, TTL, confirmations helpers |
+| `test_booking_router.py` | ID generation format, GET 404 |
+| `test_promo.py` | `Promo.calc_savings` (percent, fixed, cap), promo endpoints |
+| `test_wallet.py` | GET balance, top-up, use credits, insufficient balance |
+| `test_seed.py` | Data integrity: counts, required fields, unique IDs, 2026 dates |
+
+### Integration tests
+
+| File | Covers |
+|------|--------|
+| `test_api_flights.py` | Search with filters, GET by ID, 404 |
+| `test_api_flights_extended.py` | City-name match, COK→CCU route, CCU departures, field shapes |
+| `test_api_booking.py` | Create, GET, cancel (full CRUD) |
+| `test_api_confirmations.py` | GET /log (mocked Redis) |
+| `test_api_hotels.py` | Search by location, partial match, GET by ID, rooms, 404 |
+| `test_api_promo.py` | Valid/invalid codes, percent/fixed, case-insensitivity, cap |
+| `test_api_wallet.py` | GET balance, top-up, use, insufficient balance, chained ops |
+| `test_api_locations.py` | ES-mocked search, response shape, required params, size validation |
+
+Unit tests mock all external I/O (Redis, Kafka, RabbitMQ, Elasticsearch, MongoDB ping). Integration tests hit the real FastAPI app with a seeded in-memory SQLite database and mocked messaging — no external services needed.
 
 ---
 
@@ -188,26 +213,33 @@ See `.env.example`. Main ones:
 ```
 3-backend-app/
 ├── app/
-│   ├── main.py           # FastAPI app, lifespan, CORS, routers
-│   ├── config.py         # Env-based config
-│   ├── database.py       # SQLAlchemy engine, get_db
-│   ├── mongodb.py        # Motor client
-│   ├── redis_client.py   # Cache + confirmations log
-│   ├── kafka_client.py   # Booking event producer
-│   ├── rabbitmq_client.py # Confirmation queue producer + consumer
-│   ├── models.py         # SQLAlchemy models
-│   ├── db/seed.py        # Seed data
-│   └── routers/          # flights, hotels, booking, user, wallet, promo, chat, alerts, activity, preferences, confirmations, health
+│   ├── main.py                  # FastAPI app, lifespan, CORS, all routers
+│   ├── config.py                # Env-based config (DB, Redis, Kafka, RabbitMQ, ES)
+│   ├── database.py              # SQLAlchemy engine, get_db
+│   ├── mongodb.py               # Motor client
+│   ├── redis_client.py          # Cache + confirmations log
+│   ├── kafka_client.py          # Booking event producer
+│   ├── rabbitmq_client.py       # Confirmation queue + consumer
+│   ├── elasticsearch_client.py  # ES client, 133-location seed, search_locations
+│   ├── models.py                # SQLAlchemy models
+│   ├── db/seed.py               # 54 flights, hotels, wallet, promos (auto-resyncs)
+│   └── routers/                 # flights, hotels, booking, user, wallet, promo,
+│                                # chat, alerts, activity, preferences, confirmations,
+│                                # locations, health
 ├── tests/
-│   ├── conftest.py       # Test client, mocks
-│   ├── unit/             # Unit tests
-│   └── integration/      # Integration tests
+│   ├── conftest.py              # TestClient, SQLite in-memory, all mocks
+│   ├── unit/                    # test_health, test_redis_client, test_confirmations,
+│   │                            # test_booking_router, test_promo, test_wallet, test_seed
+│   └── integration/             # test_api_flights, test_api_flights_extended,
+│                                # test_api_booking, test_api_confirmations,
+│                                # test_api_hotels, test_api_promo, test_api_wallet,
+│                                # test_api_locations
 ├── requirements.txt
-├── requirements-dev.txt  # pytest, httpx, pytest-cov, etc.
+├── requirements-dev.txt         # pytest, httpx, pytest-cov, etc.
 ├── pytest.ini
 ├── Dockerfile
 └── .env.example
 ```
 
-- **CURSOR.md** — Full context (API, routers, DBs, messaging).
+- **CURSOR.md** — Full context (API, routers, DBs, messaging, Elasticsearch).
 - **DATABASE_DESIGN.md** — Relational database design, ER diagram, and modeling notes.
