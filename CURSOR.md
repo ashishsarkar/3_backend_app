@@ -299,12 +299,34 @@ aio-pika>=9.4.0
 
 ---
 
+## CI Infrastructure
+
+The CI infrastructure stack (shared with `2-web-app`) runs via `5-ci-infra/docker-compose.yml`:
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| DefectDojo | http://localhost:8080 | admin / admin |
+| Dependency-Track UI | http://localhost:8082 | admin / admin |
+| Dependency-Track API | http://localhost:8081 | API key (generate from UI) |
+| MinIO Console | http://localhost:9001 | minioadmin / minioadmin |
+| Container Registry | http://localhost:5050 | No auth |
+| Registry UI | http://localhost:8443 | No auth |
+
+```bash
+cd 5-ci-infra && docker compose up -d
+```
+
+See `5-ci-infra/README.md` for detailed setup, data volumes, and troubleshooting.
+
+---
+
 ## Related
 
 - **Workspace root** — `CURSOR.md` (workspace layout, quick start, env vars)
 - **`2-web-app/`** — Frontend; see `2-web-app/CURSOR.md`
+- **`5-ci-infra/`** — CI security tooling stack (DefectDojo, Dependency-Track, MinIO, Registry)
 - **`project-automation-docker-file/docker-compose.yml`** — Full stack (Postgres, MongoDB, backend, frontend)
-- **`.github/workflows/ci.yml`** — GitHub Actions CI (frontend: Node; backend job may need Python)
+- **`2-web-app/.github/workflows/frontend-ci.yml`** — Full CI pipeline (19 jobs, 6 groups)
 - **`API_CONTRACTS.md`** — Detailed request/response shapes
 - **`DATABASE_DESIGN.md`** — Relational database design, ER, tables, and modeling notes
 - **`ARCHITECT_PROMPT.md`** — Backend design / PRD reference

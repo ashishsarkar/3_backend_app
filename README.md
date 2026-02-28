@@ -243,3 +243,22 @@ See `.env.example`. Main ones:
 
 - **CURSOR.md** — Full context (API, routers, DBs, messaging, Elasticsearch).
 - **DATABASE_DESIGN.md** — Relational database design, ER diagram, and modeling notes.
+
+---
+
+## CI Infrastructure
+
+The frontend project (`2-web-app`) has a full CI pipeline. The backend shares the same CI infrastructure services for vulnerability management and artifact storage:
+
+| Service | URL | Credentials | Purpose |
+|---------|-----|-------------|---------|
+| DefectDojo | http://localhost:8080 | admin / admin | Vulnerability aggregation |
+| Dependency-Track | http://localhost:8082 | admin / admin | SCA & SBOM tracking |
+| MinIO | http://localhost:9001 | minioadmin / minioadmin | CI report storage |
+| Container Registry | http://localhost:5050 | No auth | Image storage |
+
+```bash
+cd 5-ci-infra && docker compose up -d
+```
+
+See `5-ci-infra/README.md` for full setup, credentials, and troubleshooting.
